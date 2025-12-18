@@ -24,6 +24,22 @@ async function run() {
   try {
     await client.connect();
     
+    const database = client.db('bloodDonationDB');
+    const userCollections = database.collection('user');
+
+
+    app.post('/users', async(req, res) => {
+      const user = req.body;
+      user.role = "donor";
+      user.status = "active";
+      const date = new Date();
+      user.createdAt = date;
+      // console.log(user)
+      const result = await userCollections.insertOne(user);
+      res.send(result);
+    })
+
+  
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
