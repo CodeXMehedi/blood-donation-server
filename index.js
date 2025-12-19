@@ -23,12 +23,13 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-    
+
     const database = client.db('bloodDonationDB');
     const userCollections = database.collection('user');
+    const donationRequests = database.collection('donationRequest');
+    
 
-
-    app.post('/users', async(req, res) => {
+    app.post('/users', async (req, res) => {
       const user = req.body;
       user.role = "donor";
       user.status = "active";
@@ -39,7 +40,18 @@ async function run() {
       res.send(result);
     })
 
-  
+    //add blood donation request
+    app.post('/create-donation-request', async (req, res) => {
+      const data = req.body;
+      const date = new Date();
+      data.createdAt = date;
+      // console.log(data)
+      const result = await donationRequests.insertOne(data);
+      res.send(result);
+
+    })
+
+
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
