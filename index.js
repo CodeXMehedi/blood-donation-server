@@ -51,6 +51,12 @@ async function run() {
 
     })
 
+    app.get('/users', async (req, res) => {
+      const { email } = req.query;
+      const result = await userCollections.findOne({ email });
+      res.send(result);
+    })
+
     app.get('/my-donation-request', async (req, res) => {
        const { email } = req.query
       const query = { requesterEmail: email };
