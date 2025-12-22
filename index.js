@@ -67,9 +67,16 @@ async function run() {
       const result = await userCollections.insertOne(user);
       res.send(result);
     })
+    
+    //get all users
+    app.get('/users', async (req, res) => {
+      
+      const result = await userCollections.find().toArray();
+      res.status(200).send(result);
+    })
 
     //add blood donation request
-    app.post('/create-donation-request', verifyFBToken,  async (req, res) => {
+    app.post('/create-donation-request', async (req, res) => {
       const data = req.body;
       const date = new Date();
       data.createdAt = date;
@@ -78,13 +85,17 @@ async function run() {
       res.send(result);
 
     })
-
-    app.get('/users', async (req, res) => {
-      const { email } = req.query;
-      const result = await userCollections.findOne({ email });
+//get users role
+    app.get('/users/role/:email', async (req, res) => {
+      const { email } = req.params;
+      const query = { email: email }
+      const result = await userCollections.findOne(query);
       res.send(result);
     })
 
+
+    
+//get my donation request
     app.get('/my-donation-request', async (req, res) => {
        const { email } = req.query
       const query = { requesterEmail: email };
