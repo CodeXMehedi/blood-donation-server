@@ -93,7 +93,7 @@ async function run() {
       res.send(result);
     })
 
-    app.patch('/user/update/status/', async (req, res) => {
+    app.patch('/user/update/status', async (req, res) => {
       const {email,status}  = req.query;
       const query = { email: email };
 
@@ -103,6 +103,18 @@ async function run() {
         }
       }
       const result = await userCollections.updateOne(query,updateStatus);
+      res.send(result);
+    })
+    app.patch('/user/update/role', async (req, res) => {
+      const {email,role}  = req.query;
+      const query = { email: email };
+
+      const updateRole = {
+        $set: {
+          role:role
+        }
+      }
+      const result = await userCollections.updateOne(query,updateRole);
       res.send(result);
     })
 
