@@ -93,8 +93,24 @@ async function run() {
       res.send(result);
     })
 
+    app.patch('/user/update/status/', async (req, res) => {
+      const {email,status}  = req.query;
+      const query = { email: email };
 
-    
+      const updateStatus = {
+        $set: {
+          status:status
+        }
+      }
+      const result = await userCollections.updateOne(query,updateStatus);
+      res.send(result);
+    })
+
+    // app.get('/users/by-email', async (req, res) => {
+    //   const { email } = req.query;
+    //   const result = await userCollections.findOne({ email });
+    //   res.send(result);
+    // })
 //get my donation request
     app.get('/my-donation-request', async (req, res) => {
        const { email } = req.query
