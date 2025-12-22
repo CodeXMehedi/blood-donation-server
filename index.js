@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -50,10 +50,11 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
 
     const database = client.db('bloodDonationDB');
     const userCollections = database.collection('user');
+    const donorCollections = database.collection('donor');
     const donationRequests = database.collection('donationRequest');
     
 
@@ -151,15 +152,26 @@ async function run() {
      })
 
     app.get('/my-donation-request/:id', async (req, res) => {
-      const id = req.params;
+      const {id} = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await donationRequests.findOne(query);
+      console.log(result)
       res.send(result);
     })
 
-     
+    //post who want to donate blood
+    app.post('/donor', async (req, res) => {
+      const donor = req.body;
+      
+      
+      const date = new Date();
+      user.createdAt = date;
+      // console.log(user)
+      const result = await donorCollections.insertOne(donor);
+      res.send(result);
+    })
    
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
