@@ -67,6 +67,9 @@ async function run() {
       const result = await userCollections.insertOne(user);
       res.send(result);
     })
+
+
+
     
     //get all users
     app.get('/users', async (req, res) => {
@@ -74,6 +77,8 @@ async function run() {
       const result = await userCollections.find().toArray();
       res.status(200).send(result);
     })
+
+
 
     //add blood donation request
     app.post('/create-donation-request', async (req, res) => {
@@ -85,7 +90,17 @@ async function run() {
       res.send(result);
 
     })
-//get users role
+
+
+    //get all request
+    app.get('/all-donation-request', async (req, res) => {
+
+      const result = await donationRequests.find().toArray();
+      res.status(200).send(result);
+    })
+
+
+    //get users role
     app.get('/users/role/:email', async (req, res) => {
       const { email } = req.params;
       const query = { email: email }
@@ -93,6 +108,7 @@ async function run() {
       res.send(result);
     })
 
+    //update status
     app.patch('/user/update/status', async (req, res) => {
       const {email,status}  = req.query;
       const query = { email: email };
@@ -105,6 +121,7 @@ async function run() {
       const result = await userCollections.updateOne(query,updateStatus);
       res.send(result);
     })
+    //update role
     app.patch('/user/update/role', async (req, res) => {
       const {email,role}  = req.query;
       const query = { email: email };
@@ -123,13 +140,24 @@ async function run() {
     //   const result = await userCollections.findOne({ email });
     //   res.send(result);
     // })
-//get my donation request
+
+
+     //get my donation request
     app.get('/my-donation-request', async (req, res) => {
        const { email } = req.query
       const query = { requesterEmail: email };
       const result = await donationRequests.find(query).toArray();
       res.send(result);
      })
+
+    app.get('/my-donation-request/:id', async (req, res) => {
+      const id = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await donationRequests.findOne(query);
+      res.send(result);
+    })
+
+     
    
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
