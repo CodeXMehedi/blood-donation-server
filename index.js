@@ -67,7 +67,7 @@ async function run() {
     });
 
     //get all users
-    app.get('/users',verifyFBToken, async (req, res) => {
+    app.get('/users', verifyFBToken, async (req, res) => {
       const result = await userCollections.find().toArray();
       res.status(200).send(result);
     });
@@ -162,11 +162,13 @@ async function run() {
       res.send(result);
     });
 
-    //get my donation request
     app.get('/my-donation-request',verifyFBToken, async (req, res) => {
       const { email } = req.query;
       const query = { requesterEmail: email };
-      const result = await donationRequests.find(query).toArray();
+      const result = await donationRequests
+        .find(query)
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(result);
     });
 
