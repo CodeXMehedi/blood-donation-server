@@ -98,9 +98,20 @@ async function run() {
     });
 
     //get all request
-    app.get('/all-donation-request', async (req, res) => {
-      const result = await donationRequests.find().toArray();
-      res.status(200).send(result);
+    app.get( '/all-donation-request', async (req, res) => {
+       const {
+         limit = 0,
+         skip = 0,
+         
+      } = req.query;
+      console.log(req.query)
+      const result = await donationRequests
+        .find()
+        .limit(Number(limit))
+        .skip(Number(skip))
+        .toArray();
+      // const total = await donationRequests.countDocuments();
+        res.status(200).send(result);
     });
 
     //get users role
