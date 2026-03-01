@@ -54,8 +54,9 @@ async function run() {
     const donorCollections = database.collection('donor');
     const allFunding = database.collection('funding');
     const donationRequests = database.collection('donationRequest');
-//store users data
-    app.post('/users',verifyFBToken , async (req, res) => {
+    //store users data
+    app.post('/users', verifyFBToken, async (req, res) => {
+
       const user = req.body;
       user.role = 'donor';
       user.status = 'active';
@@ -68,8 +69,16 @@ async function run() {
 
     //get all users
     app.get('/users', verifyFBToken, async (req, res) => {
-      const result = await userCollections.find().toArray();
-      res.status(200).send(result);
+      const { limit = 0, skip = 0 } = req.query;
+
+      const result = await userCollections
+        .find()
+        .limit(Number(limit))
+        .skip(Number(skip))
+        .toArray();
+      const total = await userCollections.countDocuments();
+
+      res.status(200).send({ result, total: total });
     });
 
     // app.post('/allFunding', async (req, res) => {
@@ -87,7 +96,7 @@ async function run() {
     // });
 
     //add blood donation request
-    app.post('/create-donation-request',verifyFBToken, async (req, res) => {
+    app.post('/create-donation-request', verifyFBToken, async (req, res) => {
       const data = req.body;
       // console.log(data);
       const date = new Date();
@@ -98,56 +107,55 @@ async function run() {
     });
 
     //get all request
-    app.get( '/all-donation-request', async (req, res) => {
-       const {
-         limit = 0,
-         skip = 0,
-         
-      } = req.query;
-      console.log(req.query)
+    app.get('/all-donation-request',async (req, res) => {
+      // console.log(req.query)
+      const { limit = 0, skip = 0, sort = 'size', order = 'desc' } = req.query;
+      // console.log(req.query);
+      const sortOption = {};
+      sortOption[sort || 'donationTime'] = order === 'asc' ? 1 : -1;
+      console.log(sortOption);
       const result = await donationRequests
         .find()
+        .sort(sortOption)
         .limit(Number(limit))
         .skip(Number(skip))
         .toArray();
-      // const total = await donationRequests.countDocuments();
-        res.status(200).send(result);
+      const total = await donationRequests.countDocuments();
+      res.status(200).send({ result, total: total });
     });
 
     //get users role
-    app.get('/users/role/:email',verifyFBToken, async (req, res) => {
+    app.get('/users/role/:email', verifyFBToken, async (req, res) => {
       const { email } = req.params;
       const query = { email: email };
       const result = await userCollections.findOne(query);
       res.send(result);
     });
 
-    app.get( '/users/by-email', async (req, res) => {
+    app.get('/users/by-email', async (req, res) => {
       const { email } = req.query;
       const query = { email: email };
       const result = await userCollections.findOne(query);
       res.send(result);
     });
 
+    app.patch('/users/update', async (req, res) => {
+      const { id } = req.query;
+      const updateUserData = req.body;
+      //  console.log(updateUserData);
+      const query = {
+        _id: new ObjectId(id),
+      };
 
-     app.patch('/users/update', async (req, res) => {
-         const { id } = req.query;
-         const updateUserData = req.body;
-        //  console.log(updateUserData);
-         const query = {
-           _id: new ObjectId(id),
-         };
-
-         const result = await userCollections.updateOne(query, {
-           $set: updateUserData,
-         });
-        //  console.log(result);
-         res.send(result);
-       },
-     );
+      const result = await userCollections.updateOne(query, {
+        $set: updateUserData,
+      });
+      //  console.log(result);
+      res.send(result);
+    });
 
     //update status
-    app.patch('/user/update/status',verifyFBToken, async (req, res) => {
+    app.patch('/user/update/status', verifyFBToken, async (req, res) => {
       const { email, status } = req.query;
       const query = { email: email };
 
@@ -160,7 +168,7 @@ async function run() {
       res.send(result);
     });
     //update role
-    app.patch('/user/update/role',verifyFBToken, async (req, res) => {
+    app.patch('/user/update/role', verifyFBToken, async (req, res) => {
       const { email, role } = req.query;
       const query = { email: email };
 
@@ -173,17 +181,23 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/my-donation-request',verifyFBToken, async (req, res) => {
+    app.get('/my-donation-request',  async (req, res) => {
       const { email } = req.query;
       const query = { requesterEmail: email };
+       const { limit = 0, skip = 0 } = req.query;
+
       const result = await donationRequests
         .find(query)
+        .limit(Number(limit))
+        .skip(Number(skip))
         .sort({ createdAt: -1 })
         .toArray();
-      res.send(result);
+      const total = await donationRequests.countDocuments(query);
+
+      res.status(200).send({ result, total: total });
     });
 
-    app.get('/my-donation-request/:id',verifyFBToken, async (req, res) => {
+    app.get('/my-donation-request/:id', verifyFBToken, async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await donationRequests.findOne(query);
@@ -191,65 +205,84 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/my-donation-request/update',verifyFBToken, async (req, res) => {
-      const { id } = req.query;
-      const donationRequestData = req.body;
-      // console.log(donationRequestData);
-      const query = {
-        _id: new ObjectId(id),
-      };
+    app.patch(
+      '/my-donation-request/update',
+      verifyFBToken,
+      async (req, res) => {
+        const { id } = req.query;
+        const donationRequestData = req.body;
+        // console.log(donationRequestData);
+        const query = {
+          _id: new ObjectId(id),
+        };
 
-      //  const updateBloodRequest = {
-      //    $set: {
-      //      donationRequestData,
-      //    },
-      //  };
-      const result = await donationRequests.updateOne(query, {
-        $set: donationRequestData,
-      });
-      // console.log(result);
-      res.send(result);
-    });
- app.patch('/all-donation-request/update/:id',verifyFBToken, async (req, res) => {
-   const { id } = req.params;
-  //  console.log(id);
-   const query = { _id: new ObjectId(id) };
+        //  const updateBloodRequest = {
+        //    $set: {
+        //      donationRequestData,
+        //    },
+        //  };
+        const result = await donationRequests.updateOne(query, {
+          $set: donationRequestData,
+        });
+        // console.log(result);
+        res.send(result);
+      },
+    );
+    app.patch(
+      '/all-donation-request/update/:id',
+      verifyFBToken,
+      async (req, res) => {
+        const { id } = req.params;
+        //  console.log(id);
+        const query = { _id: new ObjectId(id) };
 
-   const updateDonationStatus = {
-     $set: {
-       donationStatus: 'Inprogress',
-     },
-   };
-   const result = await donationRequests.updateOne(query, updateDonationStatus);
-   res.send(result);
- });
-    app.patch('/my-donation-request/status',verifyFBToken, async (req, res) => {
-      const { id, donationStatus } = req.query;
-      const query = {
-        _id: new ObjectId(id),
-      };
+        const updateDonationStatus = {
+          $set: {
+            donationStatus: 'Inprogress',
+          },
+        };
+        const result = await donationRequests.updateOne(
+          query,
+          updateDonationStatus,
+        );
+        res.send(result);
+      },
+    );
+    app.patch(
+      '/my-donation-request/status',
+      verifyFBToken,
+      async (req, res) => {
+        const { id, donationStatus } = req.query;
+        const query = {
+          _id: new ObjectId(id),
+        };
 
-      const updateDonationStatus = {
-        $set: {
-          donationStatus: donationStatus,
-        },
-      };
-      const result = await donationRequests.updateOne(
-        query,
-        updateDonationStatus,
-      );
-      res.send(result);
-      res.send({ success: true });
-    });
+        const updateDonationStatus = {
+          $set: {
+            donationStatus: donationStatus,
+          },
+        };
+        const result = await donationRequests.updateOne(
+          query,
+          updateDonationStatus,
+        );
+        res.send(result);
+        res.send({ success: true });
+      },
+    );
 
-    app.delete('/my-donation-request/delete',verifyFBToken, async (req, res) => {
-      const id = req.query.id;
+    app.delete(
+      '/my-donation-request/delete',
+      verifyFBToken,
+      async (req, res) => {
+        const id = req.query.id;
 
-      const result = await donationRequests.deleteOne({
-        _id: new ObjectId(id),
-      });
-      res.send(result);
-    });
+        const result = await donationRequests.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send(result);
+      },
+    );
     //post who want to donate blood
     app.post('/donor', async (req, res) => {
       const donor = req.body;
@@ -261,39 +294,47 @@ async function run() {
       res.send(result);
     });
 
-    app.patch('/all-donation-request/status',verifyFBToken, async (req, res) => {
-      const { id, donationStatus } = req.query;
+    app.patch(
+      '/all-donation-request/status',
+      verifyFBToken,
+      async (req, res) => {
+        const { id, donationStatus } = req.query;
 
-      if (!ObjectId.isValid(id)) {
-        return res.status(400).send({ error: 'Invalid ID' });
-      }
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({ error: 'Invalid ID' });
+        }
 
-      const query = { _id: new ObjectId(id) };
+        const query = { _id: new ObjectId(id) };
 
-      const updateDonationStatus = {
-        $set: {
-          donationStatus: donationStatus,
-        },
-      };
+        const updateDonationStatus = {
+          $set: {
+            donationStatus: donationStatus,
+          },
+        };
 
-      const result = await donationRequests.updateOne(
-        query,
-        updateDonationStatus,
-      );
+        const result = await donationRequests.updateOne(
+          query,
+          updateDonationStatus,
+        );
 
-      res.send(result);
-    });
-    app.delete('/all-donation-request/delete',verifyFBToken, async (req, res) => {
-      const id = req.query.id;
+        res.send(result);
+      },
+    );
+    app.delete(
+      '/all-donation-request/delete',
+      verifyFBToken,
+      async (req, res) => {
+        const id = req.query.id;
 
-      const result = await donationRequests.deleteOne({
-        _id: new ObjectId(id),
-      });
-      res.send(result);
-    });
+        const result = await donationRequests.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send(result);
+      },
+    );
 
     // GET /donors?bloodGroup=A+&district=Dhaka&upazila=Savar
-    app.get('/user',verifyFBToken, async (req, res) => {
+    app.get('/user', verifyFBToken, async (req, res) => {
       const { bloodGroup, district, upazila } = req.query;
       // console.log(req.query);
       const query = {
@@ -370,12 +411,19 @@ async function run() {
       res.send({ success: true });
     });
 
-    app.get('/funding',  async (req, res) => {
+    app.get('/funding', async (req, res) => {
+      const { limit = 0, skip = 0 } = req.query;
       //  if (email !== req.decoded_email) {
       //    return res.status(403).send({ message: 'forbidden access ' });
       //  }
-      const result = await allFunding.find().sort({ dateTime: -1 }).toArray();
-      res.status(200).send(result);
+      const result = await allFunding
+        .find()
+        .sort({ dateTime: -1 })
+        .limit(Number(limit))
+        .skip(Number(skip))
+        .toArray();
+      const total = await allFunding.countDocuments();
+      res.status(200).send({ result, total: total });
     });
     // await client.db("admin").command({ ping: 1 });
     console.log(
